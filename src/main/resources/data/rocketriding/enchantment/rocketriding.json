@@ -1,0 +1,61 @@
+{
+  "anvil_cost": 4,
+  "description": {
+    "translate": "enchantment.rocketriding.rocketriding"
+  },
+  "effects": {
+    "rocketriding:projectile_velocity": [
+      {
+        "effect": {
+          "type": "minecraft:multiply",
+          "factor": {
+            "type": "minecraft:linear",
+            "base": 0.5,
+            "per_level_above_first": 0.15
+          }
+        }
+      }
+    ],
+    "minecraft:projectile_spawned": [
+      {
+        "effect": {
+          "type": "rocketriding:owner_mount",
+          "owner_condition": {
+            "movement": {
+              "fall_distance": {
+                "min": 0.1
+              }
+            },
+            "flags": {
+              "is_on_ground": false,
+              "is_swimming": false,
+              "is_flying": false
+            }
+          }
+        },
+        "requirements": {
+          "condition": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "type": "minecraft:firework_rocket"
+          }
+        }
+      }
+    ]
+  },
+  "exclusive_set": "#rocketriding:exclusive_set/rocketriding",
+  "max_cost": {
+    "base": 75,
+    "per_level_above_first": 25
+  },
+  "max_level": 1,
+  "min_cost": {
+    "base": 25,
+    "per_level_above_first": 25
+  },
+  "slots": [
+    "mainhand"
+  ],
+  "supported_items": "#minecraft:enchantable/crossbow",
+  "weight": 2
+}

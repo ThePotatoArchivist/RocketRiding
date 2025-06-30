@@ -1,0 +1,11 @@
+{
+	"required": true,
+	"package": "archives.tater.rocketriding.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+      "LivingEntityRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

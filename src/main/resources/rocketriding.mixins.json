@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "archives.tater.rocketriding.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"CrossbowItemMixin",
+		"EnchantmentInvoker",
+		"EntityMixin",
+		"FireworkRocketEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
