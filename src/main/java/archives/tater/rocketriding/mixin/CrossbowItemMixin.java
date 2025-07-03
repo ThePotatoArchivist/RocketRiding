@@ -10,7 +10,6 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(CrossbowItem.class)
 public class CrossbowItemMixin {
@@ -26,17 +25,8 @@ public class CrossbowItemMixin {
 			return original;
         }
 
-        RocketRiding.onProjectileSpawned(serverWorld, weapon, original, item -> {});
+        RocketRiding.onFireworkShot(serverWorld, weapon, original, item -> {});
 
         return original;
-	}
-
-	@ModifyArg(
-			method = "use",
-			at = @At(value = "INVOKE", target = "Lnet/minecraft/item/CrossbowItem;shootAll(Lnet/minecraft/world/World;Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/util/Hand;Lnet/minecraft/item/ItemStack;FFLnet/minecraft/entity/LivingEntity;)V"),
-			index = 4
-	)
-	private float projectileVelocityEnchantment(float original, @Local(argsOnly = true) World world, @Local ItemStack stack) {
-		return world instanceof ServerWorld serverWorld ? RocketRiding.modifyVelocity(serverWorld, stack, original) : original;
 	}
 }

@@ -1,14 +1,16 @@
 {
-	"required": true,
-	"package": "archives.tater.rocketriding.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"mixins": [
-		"CrossbowItemMixin",
-		"EnchantmentInvoker",
-		"EntityMixin",
-		"FireworkRocketEntityMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
+  "required": true,
+  "package": "archives.tater.rocketriding.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "CrossbowItemMixin",
+    "EnchantmentInvoker",
+    "EntityMixin",
+    "FireworkRocketEntityAccessor",
+    "FireworkRocketEntityMixin",
+    "RangedWeaponItemMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
 	}
 }

@@ -13,6 +13,25 @@
             "base": 0.5,
             "per_level_above_first": 0.15
           }
+        },
+        "requirements": {
+          "condition": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "type": "minecraft:firework_rocket"
+          }
+        }
+      }
+    ],
+    "rocketriding:firework_rocket_duration": [
+      {
+        "effect": {
+          "type": "minecraft:multiply",
+          "factor": {
+            "type": "minecraft:linear",
+            "base": 2,
+            "per_level_above_first": 0.15
+          }
         }
       }
     ],

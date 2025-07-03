@@ -1,6 +1,7 @@
 package archives.tater.rocketriding;
 
 import archives.tater.rocketriding.mixin.EnchantmentInvoker;
+import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
@@ -11,7 +12,9 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentEffectContext;
 import net.minecraft.enchantment.effect.EnchantmentEffectEntry;
 import net.minecraft.enchantment.effect.EnchantmentValueEffect;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.projectile.FireworkRocketEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -53,11 +56,23 @@ public class RocketRiding implements ModInitializer {
 		return Registry.register(Registries.ENCHANTMENT_EFFECT_COMPONENT_TYPE, id, (builderOperator.apply(ComponentType.builder())).build());
 	}
 
+	// Currently only implemented on RangedWeaponItem
 	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> PROJECTILE_VELOCITY = register(
-			id("projectile_velocity"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ITEM).listOf())
+			id("projectile_velocity"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf())
 	);
 
-	public static void onProjectileSpawned(
+	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> ROCKET_DURATION = register(
+			id("firework_rocket_duration"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf())
+	);
+
+	public static void onFireworkShot(
+			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, java.util.function.Consumer<Item> onBreak
+	) {
+		runOnProjectileSpawned(world, weaponStack, fireworkRocketEntity, onBreak);
+		modifyFireworkDuration(world, weaponStack, fireworkRocketEntity);
+	}
+
+	private static void runOnProjectileSpawned(
 			ServerWorld world, ItemStack weaponStack, ProjectileEntity projectileEntity, java.util.function.Consumer<Item> onBreak
 	) {
 		LivingEntity livingEntity2 = projectileEntity.getOwner() instanceof LivingEntity livingEntity ? livingEntity : null;
@@ -70,16 +85,29 @@ public class RocketRiding implements ModInitializer {
 		}
 	}
 
-	public static float modifyVelocity(ServerWorld world, ItemStack stack, float baseVelocity) {
-		var enchantments = stack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
-		if (enchantments.isEmpty()) return baseVelocity;
-		var workingVelocity = new MutableFloat(baseVelocity);
+	private static float modifyValue(
+			ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> enchantment, ServerWorld world, ItemStack stack, Entity user, float baseValue
+	) {
+        var enchantments = stack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+		if (enchantments.isEmpty()) return baseValue;
+		var workingDuration = new MutableFloat(baseValue);
 
 		for (Object2IntMap.Entry<RegistryEntry<Enchantment>> entry : enchantments.getEnchantmentEntries()) {
-			((EnchantmentInvoker) (Object) entry.getKey().value()).invokeModifyValue(PROJECTILE_VELOCITY, world, entry.getIntValue(), stack, workingVelocity);
+			((EnchantmentInvoker) (Object) entry.getKey().value()).invokeModifyValue(enchantment, world, entry.getIntValue(), stack, user, workingDuration);
 		}
 
-		return workingVelocity.getValue();
+		return workingDuration.floatValue();
+	}
+
+	private static void modifyFireworkDuration(
+			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity
+	) {
+		var access = (FireworkRocketEntityAccessor) fireworkRocketEntity;
+		access.setLifeTime((int) modifyValue(ROCKET_DURATION, world, weaponStack, fireworkRocketEntity, access.getLifeTime()));
+	}
+
+	public static float modifyVelocity(ServerWorld world, ItemStack stack, ProjectileEntity projectileEntity, float baseVelocity) {
+		return modifyValue(PROJECTILE_VELOCITY, world, stack, projectileEntity, baseVelocity);
 	}
 
 	@Override
