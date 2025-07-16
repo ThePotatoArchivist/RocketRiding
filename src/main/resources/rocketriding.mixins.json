@@ -11,6 +11,7 @@
     "FireworkRocketEntityMixin",
     "HostileEntityMixin",
     "PersistentProjectileEntityInvoker",
+    "PillagerEntityMixin",
     "PlayerEntityMixin",
     "RangedWeaponItemMixin"
   ],

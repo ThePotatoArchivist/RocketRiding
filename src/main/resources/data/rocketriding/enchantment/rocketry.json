@@ -1,7 +1,7 @@
 {
   "anvil_cost": 4,
   "description": {
-    "translate": "enchantment.rocketriding.rocket_riding"
+    "translate": "enchantment.rocketriding.rocketry"
   },
   "effects": {
     "rocketriding:projectile_velocity": [
