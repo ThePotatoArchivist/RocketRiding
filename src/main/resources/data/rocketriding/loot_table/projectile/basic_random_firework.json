@@ -9,12 +9,8 @@
           "name": "minecraft:firework_rocket",
           "functions": [
             {
-              "function": "rocketriding:random_fireworks",
-              "colors": {
-                "type": "uniform",
-                "min_inclusive": 1,
-                "max_inclusive": 2
-              }
+              "function": "minecraft:reference",
+              "name": "rocketriding:basic_random_firework"
             }
           ]
         }

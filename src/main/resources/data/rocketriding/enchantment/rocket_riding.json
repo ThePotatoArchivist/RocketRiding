@@ -51,6 +51,20 @@
     ],
     "rocketriding:projectile_fired": [
       {
+        "requirements": {
+          "condition": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "type": "minecraft:firework_rocket",
+            "type_specific": {
+              "type": "rocketriding:rotation",
+              "pitch": {
+                "min": -90,
+                "max": -45
+              }
+            }
+          }
+        },
         "effect": {
           "type": "rocketriding:owner_mount",
           "owner_condition": {
@@ -65,23 +79,26 @@
               "is_flying": false
             }
           }
-        },
+        }
+      },
+      {
         "requirements": {
-          "condition": "minecraft:all_of",
-          "terms": [
+          "condition": "minecraft:entity_properties",
+          "entity": "this",
+          "predicate": {
+            "type": "minecraft:firework_rocket",
+            "type_specific": {
+              "type": "rocketriding:firework_rocket",
+              "explosions": 0
+            }
+          }
+        },
+        "effect": {
+          "type": "rocketriding:modify_item",
+          "modifiers": [
             {
-              "condition": "minecraft:entity_properties",
-              "entity": "this",
-              "predicate": {
-                "type": "minecraft:firework_rocket",
-                "type_specific": {
-                  "type": "rocketriding:rotation",
-                  "pitch": {
-                    "min": -90,
-                    "max": -45
-                  }
-                }
-              }
+              "function": "minecraft:reference",
+              "name": "rocketriding:basic_random_firework"
             }
           ]
         }

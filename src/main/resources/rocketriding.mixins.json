@@ -10,6 +10,7 @@
     "FireworkRocketEntityAccessor",
     "FireworkRocketEntityMixin",
     "HostileEntityMixin",
+    "PersistentProjectileEntityInvoker",
     "PlayerEntityMixin",
     "RangedWeaponItemMixin"
   ],

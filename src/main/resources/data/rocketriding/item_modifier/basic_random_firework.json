@@ -1,0 +1,8 @@
+{
+  "function": "rocketriding:random_fireworks",
+  "colors": {
+    "type": "uniform",
+    "min_inclusive": 1,
+    "max_inclusive": 2
+  }
+}

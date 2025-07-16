@@ -108,6 +108,10 @@ public class RocketRiding implements ModInitializer {
 			id("rotation"), RotationPredicate.CODEC
 	);
 
+	public static final MapCodec<FireworkRocketPredicate> FIREWORK_SUB_PREDICATE = registerSubPredicate(
+			id("firework_rocket"), FireworkRocketPredicate.CODEC
+	);
+
 	public static final LootFunctionType<RandomFireworksLootFunction> RANDOM_FIREWORKS = registerLootFunction(
 			id("random_fireworks"), RandomFireworksLootFunction.CODEC
 	);
@@ -195,13 +199,12 @@ public class RocketRiding implements ModInitializer {
 
 	private static ItemStack getLoot(RegistryKey<LootTable> lootTableKey, long seed, ServerWorld serverWorld, Entity entity, ItemStack tool) {
 		var lootTable = serverWorld.getServer().getReloadableRegistries().getLootTable(lootTableKey);
-		var builder = new LootContextParameterSet.Builder(serverWorld)
+		var parameters = new LootContextParameterSet.Builder(serverWorld)
 				.add(LootContextParameters.THIS_ENTITY, entity)
 				.add(LootContextParameters.ORIGIN, entity.getPos())
-				.add(LootContextParameters.TOOL, tool);
-
-		LootContextParameterSet lootContextParameterSet = builder.build(LootContextTypes.FISHING); // Closest?
-		var loot = lootTable.generateLoot(lootContextParameterSet, seed);
+				.add(LootContextParameters.TOOL, tool)
+				.build(LootContextTypes.FISHING);
+		var loot = lootTable.generateLoot(parameters, seed);
 		return switch (loot.size()) {
 			case 0 -> ItemStack.EMPTY;
 			case 1 -> loot.getFirst();
@@ -217,7 +220,8 @@ public class RocketRiding implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
-		Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id("owner_mount"), OwnerMountEnchantmentEntityEffect.CODEC);
+		Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id("owner_mount"), OwnerMountEnchantmentEffect.CODEC);
+		Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id("modify_item"), ModifyItemEnchantmentEffect.CODEC);
 
 		LootTableEvents.MODIFY.register((registryKey, builder, source, wrapperLookup) -> {
             if (!source.isBuiltin()) return;

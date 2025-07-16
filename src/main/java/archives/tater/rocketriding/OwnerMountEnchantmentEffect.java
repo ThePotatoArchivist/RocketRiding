@@ -16,10 +16,10 @@ import net.minecraft.util.math.Vec3d;
 
 import java.util.Optional;
 
-public record OwnerMountEnchantmentEntityEffect(Optional<EntityPredicate> ownerCondition) implements EnchantmentEntityEffect {
-    public static MapCodec<OwnerMountEnchantmentEntityEffect> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            EntityPredicate.CODEC.optionalFieldOf("owner_condition").forGetter(OwnerMountEnchantmentEntityEffect::ownerCondition)
-    ).apply(instance, OwnerMountEnchantmentEntityEffect::new));
+public record OwnerMountEnchantmentEffect(Optional<EntityPredicate> ownerCondition) implements EnchantmentEntityEffect {
+    public static MapCodec<OwnerMountEnchantmentEffect> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+            EntityPredicate.CODEC.optionalFieldOf("owner_condition").forGetter(OwnerMountEnchantmentEffect::ownerCondition)
+    ).apply(instance, OwnerMountEnchantmentEffect::new));
 
     @Override
     public void apply(ServerWorld world, int level, EnchantmentEffectContext context, Entity user, Vec3d pos) {
@@ -37,7 +37,7 @@ public record OwnerMountEnchantmentEntityEffect(Optional<EntityPredicate> ownerC
     }
 
     @Override
-    public MapCodec<? extends OwnerMountEnchantmentEntityEffect> getCodec() {
+    public MapCodec<? extends OwnerMountEnchantmentEffect> getCodec() {
         return CODEC;
     }
 }
