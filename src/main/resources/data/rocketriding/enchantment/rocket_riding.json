@@ -45,7 +45,7 @@
     "rocketriding:default_projectile": [
       {
         "effect": {
-          "loot_table": "rocketriding:projectile/basic_random_firework"
+          "loot_table": "rocketriding:projectile/firework"
         }
       }
     ],

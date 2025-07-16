@@ -17,15 +17,17 @@ import net.minecraft.util.DyeColor;
 import net.minecraft.util.math.intprovider.ConstantIntProvider;
 import net.minecraft.util.math.intprovider.IntProvider;
 import net.minecraft.util.math.random.Random;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 public class RandomFireworksLootFunction extends ConditionalLootFunction {
     public final List<FireworkExplosionComponent.Type> shapes;
-    public final IntProvider duration;
+    public final Optional<IntProvider> duration;
     public final IntProvider explosions;
     public final IntProvider colors;
     public final IntProvider fadeColors;
@@ -38,7 +40,7 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
     protected RandomFireworksLootFunction(
             List<LootCondition> conditions,
             List<FireworkExplosionComponent.Type> shapes,
-            IntProvider duration,
+            Optional<IntProvider> duration,
             IntProvider explosions,
             IntProvider colors,
             IntProvider fadeColors,
@@ -57,7 +59,7 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
 
     public static final MapCodec<RandomFireworksLootFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> addConditionsField(instance).and(instance.group(
             FireworkExplosionComponent.Type.CODEC.listOf().optionalFieldOf("shapes", ALL_TYPES).forGetter((RandomFireworksLootFunction it) -> it.shapes),
-            IntProvider.POSITIVE_CODEC.optionalFieldOf("duration", ConstantIntProvider.create(1)).forGetter((RandomFireworksLootFunction it) -> it.duration),
+            IntProvider.POSITIVE_CODEC.optionalFieldOf("duration").forGetter((RandomFireworksLootFunction it) -> it.duration),
             IntProvider.POSITIVE_CODEC.optionalFieldOf("explosions", ConstantIntProvider.create(1)).forGetter((RandomFireworksLootFunction it) -> it.explosions),
             IntProvider.POSITIVE_CODEC.optionalFieldOf("colors", ConstantIntProvider.create(1)).forGetter((RandomFireworksLootFunction it) -> it.colors),
             IntProvider.POSITIVE_CODEC.optionalFieldOf("fade_colors", ConstantIntProvider.create(0)).forGetter((RandomFireworksLootFunction it) -> it.fadeColors),
@@ -67,7 +69,7 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
 
     @Override
     protected ItemStack process(ItemStack stack, LootContext context) {
-        stack.set(DataComponentTypes.FIREWORKS, generateFirework(context.getRandom()));
+        stack.set(DataComponentTypes.FIREWORKS, generateFirework(stack.get(DataComponentTypes.FIREWORKS), context.getRandom()));
         return stack;
     }
 
@@ -89,19 +91,19 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
         );
     }
 
-    private FireworksComponent generateFirework(Random random) {
+    private FireworksComponent generateFirework(@Nullable FireworksComponent current, Random random) {
         var explosionCount = explosions.get(random);
         var explosionList = new ArrayList<FireworkExplosionComponent>();
         for (var i = 0; i < explosionCount; i++)
             explosionList.add(generateExplosion(random));
         return new FireworksComponent(
-                duration.get(random),
+                duration.map(provider -> provider.get(random)).orElse(current == null ? 1 : current.flightDuration()),
                 explosionList
         );
     }
 
     @Override
     public LootFunctionType<? extends ConditionalLootFunction> getType() {
-        return null;
+        return RocketRiding.RANDOM_FIREWORKS;
     }
 }

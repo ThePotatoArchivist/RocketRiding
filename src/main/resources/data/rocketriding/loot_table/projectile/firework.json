@@ -9,8 +9,8 @@
           "name": "minecraft:firework_rocket",
           "functions": [
             {
-              "function": "minecraft:reference",
-              "name": "rocketriding:basic_random_firework"
+              "function": "minecraft:set_fireworks",
+              "flight_duration": 1
             }
           ]
         }
