@@ -1,0 +1,14 @@
+{
+  "type": "by_cost",
+  "enchantments": [
+    "rocketriding:rocket_riding",
+    "minecraft:piercing",
+    "minecraft:quick_charge",
+    "minecraft:multishot"
+  ],
+  "cost": {
+    "type": "uniform",
+    "min_inclusive": 20,
+    "max_inclusive": 30
+  }
+}

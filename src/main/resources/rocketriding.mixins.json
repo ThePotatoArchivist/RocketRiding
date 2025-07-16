@@ -6,6 +6,7 @@
     "CrossbowItemMixin",
     "EnchantmentHelperInvoker",
     "EnchantmentInvoker",
+    "EnchantmentProvidersMixin",
     "EntityMixin",
     "FireworkRocketEntityAccessor",
     "FireworkRocketEntityMixin",
