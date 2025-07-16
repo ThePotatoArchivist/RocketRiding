@@ -11,7 +11,7 @@
             {
               "function": "minecraft:set_enchantments",
               "enchantments": {
-                "rocketriding:rocket_riding": 1
+                "rocketriding:rocketry": 1
               }
             }
           ]

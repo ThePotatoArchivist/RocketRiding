@@ -1,7 +1,7 @@
 {
   "type": "by_cost",
   "enchantments": [
-    "rocketriding:rocket_riding",
+    "rocketriding:rocketry",
     "minecraft:piercing",
     "minecraft:quick_charge",
     "minecraft:multishot"

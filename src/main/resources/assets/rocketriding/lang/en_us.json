@@ -1,4 +1,4 @@
 {
-  "enchantment.rocketriding.rocket_riding": "Rocket Riding",
-  "enchantment.rocketriding.rocket_riding.desc": "Firework rockets are slower. You can mount a firework rocket by shooting it while falling."
+  "enchantment.rocketriding.rocketry": "Rocketry",
+  "enchantment.rocketriding.rocketry.desc": "Firework rockets are slower and empty ones will be given a random explosion. You can mount a firework rocket by shooting it down while falling."
 }
