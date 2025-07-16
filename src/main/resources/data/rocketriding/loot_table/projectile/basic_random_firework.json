@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:fishing",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:firework_rocket",
+          "functions": [
+            {
+              "function": "rocketriding:random_fireworks",
+              "colors": {
+                "type": "uniform",
+                "min_inclusive": 1,
+                "max_inclusive": 2
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

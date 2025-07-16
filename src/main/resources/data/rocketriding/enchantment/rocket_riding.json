@@ -35,6 +35,20 @@
         }
       }
     ],
+    "rocketriding:allow_loading_primary": [
+      {
+        "effect": [
+          "minecraft:firework_rocket"
+        ]
+      }
+    ],
+    "rocketriding:default_projectile": [
+      {
+        "effect": {
+          "loot_table": "rocketriding:projectile/basic_random_firework"
+        }
+      }
+    ],
     "rocketriding:projectile_fired": [
       {
         "effect": {

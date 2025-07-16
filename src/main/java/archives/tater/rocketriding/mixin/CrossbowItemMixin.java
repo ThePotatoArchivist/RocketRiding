@@ -4,6 +4,7 @@ import archives.tater.rocketriding.RocketRiding;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.entity.projectile.FireworkRocketEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.CrossbowItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
@@ -28,5 +29,13 @@ public class CrossbowItemMixin {
         RocketRiding.onFireworkShot(serverWorld, weapon, original, item -> {});
 
         return original;
+	}
+
+	@ModifyExpressionValue(
+			method = "shoot",
+			at = @At(value = "INVOKE", target = "Ljava/lang/Math;sqrt(D)D")
+	)
+	private double checkGravity(double original, @Local(argsOnly = true) ProjectileEntity projectile) {
+		return projectile.getType().isIn(RocketRiding.WEIGHTLESS_PROJECTILES) ? 0.0 : original;
 	}
 }
