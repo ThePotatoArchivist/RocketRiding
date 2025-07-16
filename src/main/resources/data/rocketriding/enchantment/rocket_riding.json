@@ -35,14 +35,14 @@
         }
       }
     ],
-    "minecraft:projectile_spawned": [
+    "rocketriding:projectile_fired": [
       {
         "effect": {
           "type": "rocketriding:owner_mount",
           "owner_condition": {
             "movement": {
-              "fall_distance": {
-                "min": 0.1
+              "y": {
+                "max": 0
               }
             },
             "flags": {
@@ -53,11 +53,23 @@
           }
         },
         "requirements": {
-          "condition": "minecraft:entity_properties",
-          "entity": "this",
-          "predicate": {
-            "type": "minecraft:firework_rocket"
-          }
+          "condition": "minecraft:all_of",
+          "terms": [
+            {
+              "condition": "minecraft:entity_properties",
+              "entity": "this",
+              "predicate": {
+                "type": "minecraft:firework_rocket",
+                "type_specific": {
+                  "type": "rocketriding:rotation",
+                  "pitch": {
+                    "min": -90,
+                    "max": -45
+                  }
+                }
+              }
+            }
+          ]
         }
       }
     ]

@@ -1,7 +1,9 @@
 package archives.tater.rocketriding;
 
+import archives.tater.rocketriding.mixin.EnchantmentHelperInvoker;
 import archives.tater.rocketriding.mixin.EnchantmentInvoker;
 import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
+import com.mojang.serialization.MapCodec;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
@@ -11,6 +13,7 @@ import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentEffectContext;
 import net.minecraft.enchantment.effect.EnchantmentEffectEntry;
+import net.minecraft.enchantment.effect.EnchantmentEntityEffect;
 import net.minecraft.enchantment.effect.EnchantmentValueEffect;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -23,6 +26,7 @@ import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTables;
 import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.loot.entry.LootTableEntry;
+import net.minecraft.predicate.entity.EntitySubPredicate;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -56,6 +60,10 @@ public class RocketRiding implements ModInitializer {
 		return Registry.register(Registries.ENCHANTMENT_EFFECT_COMPONENT_TYPE, id, (builderOperator.apply(ComponentType.builder())).build());
 	}
 
+	private static <T extends EntitySubPredicate> MapCodec<T> registerSubPredicate(Identifier id, MapCodec<T> codec) {
+		return Registry.register(Registries.ENTITY_SUB_PREDICATE_TYPE, id, codec);
+	}
+
 	// Currently only implemented on RangedWeaponItem
 	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> PROJECTILE_VELOCITY = register(
 			id("projectile_velocity"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf())
@@ -65,24 +73,33 @@ public class RocketRiding implements ModInitializer {
 			id("firework_rocket_duration"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf())
 	);
 
+	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentEntityEffect>>> PROJECTILE_FIRED = register(
+			id("projectile_fired"), builder -> builder.codec(EnchantmentEffectEntry.createCodec(EnchantmentEntityEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf())
+	);
+
+	public static final MapCodec<RotationPredicate> FIREWORK_ROCKET_SUB_PREDICATE = registerSubPredicate(
+			id("rotation"), RotationPredicate.CODEC
+	);
+
 	public static void onFireworkShot(
 			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, java.util.function.Consumer<Item> onBreak
 	) {
-		runOnProjectileSpawned(world, weaponStack, fireworkRocketEntity, onBreak);
 		modifyFireworkDuration(world, weaponStack, fireworkRocketEntity);
 	}
 
-	private static void runOnProjectileSpawned(
+	public static void onProjectileFired(
 			ServerWorld world, ItemStack weaponStack, ProjectileEntity projectileEntity, java.util.function.Consumer<Item> onBreak
 	) {
 		LivingEntity livingEntity2 = projectileEntity.getOwner() instanceof LivingEntity livingEntity ? livingEntity : null;
 		EnchantmentEffectContext enchantmentEffectContext = new EnchantmentEffectContext(weaponStack, null, livingEntity2, onBreak);
 
-		ItemEnchantmentsComponent itemEnchantmentsComponent = weaponStack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
-
-		for (Object2IntMap.Entry<RegistryEntry<Enchantment>> entry : itemEnchantmentsComponent.getEnchantmentEntries()) {
-			entry.getKey().value().onProjectileSpawned(world, entry.getIntValue(), enchantmentEffectContext, projectileEntity);
-		}
+		EnchantmentHelperInvoker.invokeForEachEnchantment(weaponStack, (entry, level) -> {
+            EnchantmentInvoker.invokeApplyEffects(
+					entry.value().getEffect(PROJECTILE_FIRED),
+					EnchantmentInvoker.invokeCreateEnchantedEntityLootContext(world, level, projectileEntity, projectileEntity.getPos()),
+					effect -> effect.apply(world, level, enchantmentEffectContext, projectileEntity, projectileEntity.getPos())
+			);
+		});
 	}
 
 	private static float modifyValue(

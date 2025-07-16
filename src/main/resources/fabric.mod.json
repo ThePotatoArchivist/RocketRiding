@@ -22,6 +22,7 @@
 			"archives.tater.rocketriding.RocketRidingClient"
 		]
 	},
+	"accessWidener": "rocketriding.accesswidener",
 	"mixins": [
 		"rocketriding.mixins.json",
 		{
