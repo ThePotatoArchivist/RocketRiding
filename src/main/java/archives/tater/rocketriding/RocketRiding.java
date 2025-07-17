@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
@@ -119,13 +120,13 @@ public class RocketRiding implements ModInitializer {
 	public static final TagKey<EntityType<?>> WEIGHTLESS_PROJECTILES = TagKey.of(RegistryKeys.ENTITY_TYPE, id("weightless_projectiles"));
 
 	public static void onFireworkShot(
-			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, java.util.function.Consumer<Item> onBreak
+			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, Consumer<Item> onBreak
 	) {
 		modifyFireworkDuration(world, weaponStack, fireworkRocketEntity);
 	}
 
 	public static void onProjectileFired(
-			ServerWorld world, ItemStack weaponStack, ProjectileEntity projectileEntity, java.util.function.Consumer<Item> onBreak
+			ServerWorld world, ItemStack weaponStack, ProjectileEntity projectileEntity, Consumer<Item> onBreak
 	) {
 		LivingEntity livingEntity2 = projectileEntity.getOwner() instanceof LivingEntity livingEntity ? livingEntity : null;
 		EnchantmentEffectContext enchantmentEffectContext = new EnchantmentEffectContext(weaponStack, null, livingEntity2, onBreak);
