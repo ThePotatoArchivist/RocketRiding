@@ -57,28 +57,36 @@
           "predicate": {
             "type": "minecraft:firework_rocket",
             "type_specific": {
-              "type": "rocketriding:rotation",
-              "pitch": {
-                "min": -90,
-                "max": -45
-              }
+              "type": "rocketriding:all_of",
+              "predicates": [
+                {
+                  "type": "rocketriding:owner",
+                  "predicate": {
+                    "movement": {
+                      "y": {
+                        "max": 0
+                      }
+                    },
+                    "flags": {
+                      "is_on_ground": false,
+                      "is_swimming": false,
+                      "is_flying": false
+                    }
+                  }
+                },
+                {
+                  "type": "rocketriding:rotation",
+                  "pitch": {
+                    "min": -90,
+                    "max": -45
+                  }
+                }
+              ]
             }
           }
         },
         "effect": {
-          "type": "rocketriding:owner_mount",
-          "owner_condition": {
-            "movement": {
-              "y": {
-                "max": 0
-              }
-            },
-            "flags": {
-              "is_on_ground": false,
-              "is_swimming": false,
-              "is_flying": false
-            }
-          }
+          "type": "rocketriding:owner_mount"
         }
       },
       {

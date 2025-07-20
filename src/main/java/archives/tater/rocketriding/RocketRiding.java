@@ -84,6 +84,10 @@ public class RocketRiding implements ModInitializer {
 		return Registry.register(Registries.LOOT_FUNCTION_TYPE, id, new LootFunctionType<>(codec));
 	}
 
+	private static <T extends EnchantmentEntityEffect> MapCodec<T> registerEffect(Identifier id, MapCodec<T> codec) {
+		return Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id, codec);
+	}
+
 	// Currently only implemented on RangedWeaponItem
 	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> PROJECTILE_VELOCITY = registerComponent(
 			id("projectile_velocity"), EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
@@ -103,14 +107,6 @@ public class RocketRiding implements ModInitializer {
 
 	public static final ComponentType<List<EnchantmentEffectEntry<ContainerLootComponent>>> DEFAULT_PROJECTILE = registerComponent(
 			id("default_projectile"), EnchantmentEffectEntry.createCodec(ContainerLootComponent.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
-	);
-
-	public static final MapCodec<RotationPredicate> ROTATION_SUB_PREDICATE = registerSubPredicate(
-			id("rotation"), RotationPredicate.CODEC
-	);
-
-	public static final MapCodec<FireworkRocketPredicate> FIREWORK_SUB_PREDICATE = registerSubPredicate(
-			id("firework_rocket"), FireworkRocketPredicate.CODEC
 	);
 
 	public static final LootFunctionType<RandomFireworksLootFunction> RANDOM_FIREWORKS = registerLootFunction(
@@ -221,8 +217,13 @@ public class RocketRiding implements ModInitializer {
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
-		Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id("owner_mount"), OwnerMountEnchantmentEffect.CODEC);
-		Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id("modify_item"), ModifyItemEnchantmentEffect.CODEC);
+		registerEffect(id("owner_mount"), OwnerMountEnchantmentEffect.CODEC);
+		registerEffect(id("modify_item"), ModifyItemEnchantmentEffect.CODEC);
+
+		registerSubPredicate(id("rotation"), RotationPredicate.CODEC);
+		registerSubPredicate(id("firework_rocket"), FireworkRocketPredicate.CODEC);
+		registerSubPredicate(id("all_of"), AllOfSubPredicate.CODEC);
+		registerSubPredicate(id("owner"), OwnerPredicate.CODEC);
 
 		LootTableEvents.MODIFY.register((registryKey, builder, source, wrapperLookup) -> {
             if (!source.isBuiltin()) return;
