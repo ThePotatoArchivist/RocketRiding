@@ -2,13 +2,13 @@
 	"schemaVersion": 1,
 	"id": "rocketriding",
 	"version": "${version}",
-	"name": "RocketRiding",
-	"description": "Ride firework rockets",
+	"name": "Rocket Redux",
+	"description": "Rocket riding and other auxiliary features",
 	"authors": [
 		"ThePotatoArchivist"
 	],
 	"contact": {
-		"homepage": "https://modrinth.com/mod/",
+		"homepage": "https://modrinth.com/mod/rocket-redux",
 		"sources": "https://github.com/ThePotatoArchivist/RocketRiding"
 	},
 	"license": "MIT",
