@@ -3,7 +3,7 @@
 	"package": "archives.tater.rocketriding.mixin.client",
 	"compatibilityLevel": "JAVA_21",
 	"client": [
-      "LivingEntityRendererMixin"
+      "BipedEntityRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

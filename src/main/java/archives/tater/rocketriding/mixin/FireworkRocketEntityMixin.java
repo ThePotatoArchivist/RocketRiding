@@ -8,6 +8,7 @@ import net.minecraft.entity.MovementType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.projectile.FireworkRocketEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,10 +38,10 @@ public abstract class FireworkRocketEntityMixin extends ProjectileEntity {
     )
     private void kineticDamage(FireworkRocketEntity instance, MovementType movementType, Vec3d vec3d, Operation<Void> original) {
         original.call(instance, movementType, vec3d);
-        if (!horizontalCollision) return;
+        if (!(getWorld() instanceof ServerWorld serverWorld) || !horizontalCollision) return;
         var damage = 10 * (float) (vec3d.horizontalLength() - getVelocity().horizontalLength()) - 3;
         for (var passenger : getPassengerList()) {
-            passenger.damage(getDamageSources().flyIntoWall(), damage);
+            passenger.damage(serverWorld, getDamageSources().flyIntoWall(), damage);
         }
     }
 }

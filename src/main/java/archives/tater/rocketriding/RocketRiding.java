@@ -28,9 +28,9 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.loot.LootPool;
 import net.minecraft.loot.LootTable;
 import net.minecraft.loot.LootTables;
-import net.minecraft.loot.context.LootContextParameterSet;
 import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.loot.context.LootContextTypes;
+import net.minecraft.loot.context.LootWorldContext;
 import net.minecraft.loot.entry.LootTableEntry;
 import net.minecraft.loot.function.LootFunction;
 import net.minecraft.loot.function.LootFunctionType;
@@ -196,7 +196,7 @@ public class RocketRiding implements ModInitializer {
 
 	private static ItemStack getLoot(RegistryKey<LootTable> lootTableKey, long seed, ServerWorld serverWorld, Entity entity, ItemStack tool) {
 		var lootTable = serverWorld.getServer().getReloadableRegistries().getLootTable(lootTableKey);
-		var parameters = new LootContextParameterSet.Builder(serverWorld)
+		var parameters = new LootWorldContext.Builder(serverWorld)
 				.add(LootContextParameters.THIS_ENTITY, entity)
 				.add(LootContextParameters.ORIGIN, entity.getPos())
 				.add(LootContextParameters.TOOL, tool)
