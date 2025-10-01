@@ -1,9 +1,9 @@
 package archives.tater.rocketriding;
 
-import archives.tater.rocketriding.mixin.EnchantmentInvoker;
 import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
 import archives.tater.rocketriding.mixin.PersistentProjectileEntityInvoker;
 import com.mojang.serialization.MapCodec;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentEffectContext;
 import net.minecraft.enchantment.effect.EnchantmentEntityEffect;
 import net.minecraft.entity.Entity;
@@ -33,7 +33,7 @@ public record ModifyItemEnchantmentEffect(
         }).copy();
         if (stack.isEmpty()) return;
 
-        var lootContext = EnchantmentInvoker.invokeCreateEnchantedEntityLootContext(world, level, user, pos);
+        var lootContext = Enchantment.createEnchantedEntityLootContext(world, level, user, pos);
         for (var modifier : modifiers)
             stack = modifier.apply(stack, lootContext);
 

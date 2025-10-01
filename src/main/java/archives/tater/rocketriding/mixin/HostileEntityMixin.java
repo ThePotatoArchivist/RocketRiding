@@ -29,7 +29,7 @@ public abstract class HostileEntityMixin extends PathAwareEntity {
             }
     )
     private Predicate<ItemStack> addEnchantmentProjectiles(Predicate<ItemStack> original, @Local(argsOnly = true) ItemStack stack) {
-        if (!(getWorld() instanceof ServerWorld serverWorld)) return original;
+        if (!(getEntityWorld() instanceof ServerWorld serverWorld)) return original;
         return RocketRiding.getAllowedPrimaryProjectiles(serverWorld, stack, this, original);
     }
 
@@ -38,7 +38,7 @@ public abstract class HostileEntityMixin extends PathAwareEntity {
             at = @At(value = "NEW", target = "(Lnet/minecraft/item/ItemConvertible;)Lnet/minecraft/item/ItemStack;")
     )
     private ItemStack addEnchantmentDefaultProjectile(ItemStack original, @Local(argsOnly = true) ItemStack stack) {
-        if (!(getWorld() instanceof ServerWorld serverWorld)) return original;
+        if (!(getEntityWorld() instanceof ServerWorld serverWorld)) return original;
         return Objects.requireNonNullElse(RocketRiding.getDefaultProjectile(serverWorld, stack, this), original);
     }
 }

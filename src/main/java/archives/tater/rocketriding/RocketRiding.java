@@ -1,7 +1,5 @@
 package archives.tater.rocketriding;
 
-import archives.tater.rocketriding.mixin.EnchantmentHelperInvoker;
-import archives.tater.rocketriding.mixin.EnchantmentInvoker;
 import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
 import com.google.common.base.Predicates;
 import com.mojang.serialization.Codec;
@@ -15,6 +13,7 @@ import net.minecraft.component.type.ContainerLootComponent;
 import net.minecraft.component.type.ItemEnchantmentsComponent;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentEffectContext;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.effect.EnchantmentEffectEntry;
 import net.minecraft.enchantment.effect.EnchantmentEntityEffect;
 import net.minecraft.enchantment.effect.EnchantmentValueEffect;
@@ -127,11 +126,11 @@ public class RocketRiding implements ModInitializer {
 		LivingEntity livingEntity2 = projectileEntity.getOwner() instanceof LivingEntity livingEntity ? livingEntity : null;
 		EnchantmentEffectContext enchantmentEffectContext = new EnchantmentEffectContext(weaponStack, null, livingEntity2, onBreak);
 
-		EnchantmentHelperInvoker.invokeForEachEnchantment(weaponStack, (entry, level) -> {
-            EnchantmentInvoker.invokeApplyEffects(
+		EnchantmentHelper.forEachEnchantment(weaponStack, (entry, level) -> {
+            Enchantment.applyEffects(
 					entry.value().getEffect(PROJECTILE_FIRED),
-					EnchantmentInvoker.invokeCreateEnchantedEntityLootContext(world, level, projectileEntity, projectileEntity.getPos()),
-					effect -> effect.apply(world, level, enchantmentEffectContext, projectileEntity, projectileEntity.getPos())
+					Enchantment.createEnchantedEntityLootContext(world, level, projectileEntity, projectileEntity.getEntityPos()),
+					effect -> effect.apply(world, level, enchantmentEffectContext, projectileEntity, projectileEntity.getEntityPos())
 			);
 		});
 	}
@@ -144,7 +143,7 @@ public class RocketRiding implements ModInitializer {
 		var workingDuration = new MutableFloat(baseValue);
 
 		for (Object2IntMap.Entry<RegistryEntry<Enchantment>> entry : enchantments.getEnchantmentEntries()) {
-			((EnchantmentInvoker) (Object) entry.getKey().value()).invokeModifyValue(enchantment, world, entry.getIntValue(), stack, user, workingDuration);
+			entry.getKey().value().modifyValue(enchantment, world, entry.getIntValue(), stack, user, workingDuration);
 		}
 
 		return workingDuration.floatValue();
@@ -164,10 +163,10 @@ public class RocketRiding implements ModInitializer {
 	public static Predicate<ItemStack> getAllowedPrimaryProjectiles(ServerWorld world, ItemStack stack, Entity user, Predicate<ItemStack> original) {
 		var predicates = new ArrayList<com.google.common.base.Predicate<RegistryEntry<Item>>>();
 
-		EnchantmentHelperInvoker.invokeForEachEnchantment(stack, (entry, level) -> {
-			EnchantmentInvoker.invokeApplyEffects(
+		EnchantmentHelper.forEachEnchantment(stack, (entry, level) -> {
+			Enchantment.applyEffects(
 					entry.value().getEffect(ALLOW_LOADING_PRIMARY),
-					EnchantmentInvoker.invokeCreateEnchantedEntityLootContext(world, level, user, user.getPos()),
+					Enchantment.createEnchantedEntityLootContext(world, level, user, user.getEntityPos()),
 					effect -> predicates.add(effect::contains)
 			);
 		});
@@ -182,11 +181,11 @@ public class RocketRiding implements ModInitializer {
     public static @Nullable ItemStack getDefaultProjectile(ServerWorld world, ItemStack stack, Entity user) {
 		AtomicReference<@Nullable ItemStack> projectile = new AtomicReference<>();
 
-		EnchantmentHelperInvoker.invokeForEachEnchantment(stack, (entry, level) -> {
+		EnchantmentHelper.forEachEnchantment(stack, (entry, level) -> {
 			if (projectile.get() != null) return;
-			EnchantmentInvoker.invokeApplyEffects(
+			Enchantment.applyEffects(
 					entry.value().getEffect(DEFAULT_PROJECTILE),
-					EnchantmentInvoker.invokeCreateEnchantedEntityLootContext(world, level, user, user.getPos()),
+					Enchantment.createEnchantedEntityLootContext(world, level, user, user.getEntityPos()),
 					effect -> projectile.set(getLoot(effect.lootTable(), effect.seed(), world, user, stack))
 			);
 		});
@@ -198,7 +197,7 @@ public class RocketRiding implements ModInitializer {
 		var lootTable = serverWorld.getServer().getReloadableRegistries().getLootTable(lootTableKey);
 		var parameters = new LootWorldContext.Builder(serverWorld)
 				.add(LootContextParameters.THIS_ENTITY, entity)
-				.add(LootContextParameters.ORIGIN, entity.getPos())
+				.add(LootContextParameters.ORIGIN, entity.getEntityPos())
 				.add(LootContextParameters.TOOL, tool)
 				.build(LootContextTypes.FISHING);
 		var loot = lootTable.generateLoot(parameters, seed);

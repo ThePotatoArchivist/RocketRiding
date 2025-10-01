@@ -38,7 +38,7 @@ public abstract class FireworkRocketEntityMixin extends ProjectileEntity {
     )
     private void kineticDamage(FireworkRocketEntity instance, MovementType movementType, Vec3d vec3d, Operation<Void> original) {
         original.call(instance, movementType, vec3d);
-        if (!(getWorld() instanceof ServerWorld serverWorld) || !horizontalCollision) return;
+        if (!(getEntityWorld() instanceof ServerWorld serverWorld) || !horizontalCollision) return;
         var damage = 10 * (float) (vec3d.horizontalLength() - getVelocity().horizontalLength()) - 3;
         for (var passenger : getPassengerList()) {
             passenger.damage(serverWorld, getDamageSources().flyIntoWall(), damage);

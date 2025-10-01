@@ -37,7 +37,7 @@ public class RangedWeaponItemMixin {
             index = 3
     )
     private float projectileVelocityEnchantment(float speed, @Local(argsOnly = true) ProjectileEntity projectileEntity) {
-        if (weaponStack == null || !(projectileEntity.getWorld() instanceof ServerWorld world)) return speed;
+        if (weaponStack == null || !(projectileEntity.getEntityWorld() instanceof ServerWorld world)) return speed;
         return RocketRiding.modifyVelocity(world, weaponStack, projectileEntity, speed);
     }
 
@@ -52,7 +52,7 @@ public class RangedWeaponItemMixin {
             RocketRiding.LOGGER.error("Invalid weapon firing an arrow");
             return;
         }
-        if (!(projectile.getWorld() instanceof ServerWorld world)) return;
+        if (!(projectile.getEntityWorld() instanceof ServerWorld world)) return;
 
         RocketRiding.onProjectileFired(world, stack, projectile, item -> {});
     }
