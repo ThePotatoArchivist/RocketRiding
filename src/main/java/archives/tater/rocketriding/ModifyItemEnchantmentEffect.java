@@ -3,50 +3,49 @@ package archives.tater.rocketriding;
 import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
 import archives.tater.rocketriding.mixin.PersistentProjectileEntityInvoker;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentEffectContext;
-import net.minecraft.enchantment.effect.EnchantmentEntityEffect;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.FireworkRocketEntity;
-import net.minecraft.entity.projectile.PersistentProjectileEntity;
-import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.function.LootFunction;
-import net.minecraft.loot.function.LootFunctionTypes;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
-
 import java.util.List;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantedItemInUse;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.effects.EnchantmentEntityEffect;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctions;
+import net.minecraft.world.phys.Vec3;
 
 public record ModifyItemEnchantmentEffect(
-        List<LootFunction> modifiers
+        List<LootItemFunction> modifiers
 ) implements EnchantmentEntityEffect {
-    public static final MapCodec<ModifyItemEnchantmentEffect> CODEC = LootFunctionTypes.CODEC.listOf().fieldOf("modifiers").xmap(ModifyItemEnchantmentEffect::new, ModifyItemEnchantmentEffect::modifiers);
+    public static final MapCodec<ModifyItemEnchantmentEffect> CODEC = LootItemFunctions.ROOT_CODEC.listOf().fieldOf("modifiers").xmap(ModifyItemEnchantmentEffect::new, ModifyItemEnchantmentEffect::modifiers);
 
     @Override
-    public void apply(ServerWorld world, int level, EnchantmentEffectContext context, Entity user, Vec3d pos) {
+    public void apply(ServerLevel world, int level, EnchantedItemInUse context, Entity user, Vec3 pos) {
         var stack = (switch (user) {
-            case PersistentProjectileEntity projectile -> projectile.getItemStack();
-            case ThrownItemEntity projectile -> projectile.getStack();
-            case FireworkRocketEntity projectile -> projectile.getStack();
+            case AbstractArrow projectile -> projectile.getPickupItemStackOrigin();
+            case ThrowableItemProjectile projectile -> projectile.getItem();
+            case FireworkRocketEntity projectile -> projectile.getItem();
             default -> ItemStack.EMPTY;
         }).copy();
         if (stack.isEmpty()) return;
 
-        var lootContext = Enchantment.createEnchantedEntityLootContext(world, level, user, pos);
+        var lootContext = Enchantment.entityContext(world, level, user, pos);
         for (var modifier : modifiers)
             stack = modifier.apply(stack, lootContext);
 
         switch(user) {
-            case PersistentProjectileEntity projectile -> ((PersistentProjectileEntityInvoker) projectile).invokeSetStack(stack);
-            case ThrownItemEntity projectile -> projectile.setItem(stack);
-            case FireworkRocketEntity projectile -> projectile.getDataTracker().set(FireworkRocketEntityAccessor.getITEM(), stack);
+            case AbstractArrow projectile -> ((PersistentProjectileEntityInvoker) projectile).invokeSetPickupItemStack(stack);
+            case ThrowableItemProjectile projectile -> projectile.setItem(stack);
+            case FireworkRocketEntity projectile -> projectile.getEntityData().set(FireworkRocketEntityAccessor.getDATA_ID_FIREWORKS_ITEM(), stack);
             default -> {}
         }
     }
 
     @Override
-    public MapCodec<? extends EnchantmentEntityEffect> getCodec() {
+    public MapCodec<? extends EnchantmentEntityEffect> codec() {
         return CODEC;
     }
 }

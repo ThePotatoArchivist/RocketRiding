@@ -1,13 +1,13 @@
 package archives.tater.rocketriding;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.entity.Entity;
-import net.minecraft.predicate.entity.EntitySubPredicate;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import net.minecraft.advancements.criterion.EntitySubPredicate;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 
 public record AllOfSubPredicate(
         List<EntitySubPredicate> predicates
@@ -15,14 +15,14 @@ public record AllOfSubPredicate(
     public static final MapCodec<AllOfSubPredicate> CODEC = EntitySubPredicate.CODEC.listOf().xmap(AllOfSubPredicate::new, AllOfSubPredicate::predicates).fieldOf("predicates");
 
     @Override
-    public MapCodec<? extends EntitySubPredicate> getCodec() {
+    public MapCodec<? extends EntitySubPredicate> codec() {
         return CODEC;
     }
 
     @Override
-    public boolean test(Entity entity, ServerWorld world, @Nullable Vec3d pos) {
+    public boolean matches(Entity entity, ServerLevel world, @Nullable Vec3 pos) {
         for (var predicate : predicates)
-            if (!predicate.test(entity, world, pos))
+            if (!predicate.matches(entity, world, pos))
                 return false;
         return true;
     }

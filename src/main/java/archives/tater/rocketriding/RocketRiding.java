@@ -1,45 +1,48 @@
 package archives.tater.rocketriding;
 
 import archives.tater.rocketriding.mixin.FireworkRocketEntityAccessor;
-import com.google.common.base.Predicates;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
-import net.minecraft.component.ComponentType;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ContainerLootComponent;
-import net.minecraft.component.type.ItemEnchantmentsComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentEffectContext;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.effect.EnchantmentEffectEntry;
-import net.minecraft.enchantment.effect.EnchantmentEntityEffect;
-import net.minecraft.enchantment.effect.EnchantmentValueEffect;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.projectile.FireworkRocketEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.LootPool;
-import net.minecraft.loot.LootTable;
-import net.minecraft.loot.LootTables;
-import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.loot.context.LootContextTypes;
-import net.minecraft.loot.context.LootWorldContext;
-import net.minecraft.loot.entry.LootTableEntry;
-import net.minecraft.loot.function.LootFunction;
-import net.minecraft.loot.function.LootFunctionType;
-import net.minecraft.predicate.entity.EntitySubPredicate;
-import net.minecraft.registry.*;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.entry.RegistryEntryList;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Identifier;
+
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
+import net.minecraft.advancements.criterion.EntitySubPredicate;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryCodecs;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SeededContainerLoot;
+import net.minecraft.world.item.enchantment.*;
+import net.minecraft.world.item.enchantment.effects.EnchantmentEntityEffect;
+import net.minecraft.world.item.enchantment.effects.EnchantmentValueEffect;
+import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootPool;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.entries.NestedLootTable;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+
+import com.google.common.base.Predicates;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import org.apache.commons.lang3.mutable.MutableFloat;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -56,7 +59,7 @@ public class RocketRiding implements ModInitializer {
 	public static final String MOD_ID = "rocketriding";
 
 	public static Identifier id(String path) {
-		return Identifier.of(MOD_ID, path);
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
 	// This logger is used to write text to the console and the log file.
@@ -64,109 +67,109 @@ public class RocketRiding implements ModInitializer {
 	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
-	public static final RegistryKey<LootTable> END_CITY_INJECT = RegistryKey.of(RegistryKeys.LOOT_TABLE, id("inject/end_city_treasure"));
-	public static final RegistryKey<LootTable> TRIAL_CHAMBER_INJECT = RegistryKey.of(RegistryKeys.LOOT_TABLE, id("inject/trial_chambers"));
+	public static final ResourceKey<LootTable> END_CITY_INJECT = ResourceKey.create(Registries.LOOT_TABLE, id("inject/end_city_treasure"));
+	public static final ResourceKey<LootTable> TRIAL_CHAMBER_INJECT = ResourceKey.create(Registries.LOOT_TABLE, id("inject/trial_chambers"));
 
-	private static <T> ComponentType<T> registerComponent(Identifier id, UnaryOperator<ComponentType.Builder<T>> builderOperator) {
-		return Registry.register(Registries.ENCHANTMENT_EFFECT_COMPONENT_TYPE, id, (builderOperator.apply(ComponentType.builder())).build());
+	private static <T> DataComponentType<T> registerComponent(Identifier id, UnaryOperator<DataComponentType.Builder<T>> builderOperator) {
+		return Registry.register(BuiltInRegistries.ENCHANTMENT_EFFECT_COMPONENT_TYPE, id, (builderOperator.apply(DataComponentType.builder())).build());
 	}
 
-	private static <T> ComponentType<T> registerComponent(Identifier id, Codec<T> codec) {
-		return registerComponent(id, builder -> builder.codec(codec));
+	private static <T> DataComponentType<T> registerComponent(Identifier id, Codec<T> codec) {
+		return registerComponent(id, builder -> builder.persistent(codec));
 	}
 
 	private static <T extends EntitySubPredicate> MapCodec<T> registerSubPredicate(Identifier id, MapCodec<T> codec) {
-		return Registry.register(Registries.ENTITY_SUB_PREDICATE_TYPE, id, codec);
+		return Registry.register(BuiltInRegistries.ENTITY_SUB_PREDICATE_TYPE, id, codec);
 	}
 
-	private static <T extends LootFunction> LootFunctionType<T> registerLootFunction(Identifier id, MapCodec<T> codec) {
-		return Registry.register(Registries.LOOT_FUNCTION_TYPE, id, new LootFunctionType<>(codec));
+	private static <T extends LootItemFunction> LootItemFunctionType<T> registerLootFunction(Identifier id, MapCodec<T> codec) {
+		return Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, id, new LootItemFunctionType<>(codec));
 	}
 
 	private static <T extends EnchantmentEntityEffect> MapCodec<T> registerEffect(Identifier id, MapCodec<T> codec) {
-		return Registry.register(Registries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id, codec);
+		return Registry.register(BuiltInRegistries.ENCHANTMENT_ENTITY_EFFECT_TYPE, id, codec);
 	}
 
 	// Currently only implemented on RangedWeaponItem
-	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> PROJECTILE_VELOCITY = registerComponent(
-			id("projectile_velocity"), EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
+	public static final DataComponentType<List<ConditionalEffect<EnchantmentValueEffect>>> PROJECTILE_VELOCITY = registerComponent(
+			id("projectile_velocity"), ConditionalEffect.codec(EnchantmentValueEffect.CODEC, LootContextParamSets.ENCHANTED_ENTITY).listOf()
 	);
 
-	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> ROCKET_DURATION = registerComponent(
-			id("firework_rocket_duration"), EnchantmentEffectEntry.createCodec(EnchantmentValueEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
+	public static final DataComponentType<List<ConditionalEffect<EnchantmentValueEffect>>> ROCKET_DURATION = registerComponent(
+			id("firework_rocket_duration"), ConditionalEffect.codec(EnchantmentValueEffect.CODEC, LootContextParamSets.ENCHANTED_ENTITY).listOf()
 	);
 
-	public static final ComponentType<List<EnchantmentEffectEntry<EnchantmentEntityEffect>>> PROJECTILE_FIRED = registerComponent(
-			id("projectile_fired"), EnchantmentEffectEntry.createCodec(EnchantmentEntityEffect.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
+	public static final DataComponentType<List<ConditionalEffect<EnchantmentEntityEffect>>> PROJECTILE_FIRED = registerComponent(
+			id("projectile_fired"), ConditionalEffect.codec(EnchantmentEntityEffect.CODEC, LootContextParamSets.ENCHANTED_ENTITY).listOf()
 	);
 
-	public static final ComponentType<List<EnchantmentEffectEntry<RegistryEntryList<Item>>>> ALLOW_LOADING_PRIMARY = registerComponent(
-			id("allow_loading_primary"), EnchantmentEffectEntry.createCodec(RegistryCodecs.entryList(RegistryKeys.ITEM), LootContextTypes.ENCHANTED_ENTITY).listOf()
+	public static final DataComponentType<List<ConditionalEffect<HolderSet<Item>>>> ALLOW_LOADING_PRIMARY = registerComponent(
+			id("allow_loading_primary"), ConditionalEffect.codec(RegistryCodecs.homogeneousList(Registries.ITEM), LootContextParamSets.ENCHANTED_ENTITY).listOf()
 	);
 
-	public static final ComponentType<List<EnchantmentEffectEntry<ContainerLootComponent>>> DEFAULT_PROJECTILE = registerComponent(
-			id("default_projectile"), EnchantmentEffectEntry.createCodec(ContainerLootComponent.CODEC, LootContextTypes.ENCHANTED_ENTITY).listOf()
+	public static final DataComponentType<List<ConditionalEffect<SeededContainerLoot>>> DEFAULT_PROJECTILE = registerComponent(
+			id("default_projectile"), ConditionalEffect.codec(SeededContainerLoot.CODEC, LootContextParamSets.ENCHANTED_ENTITY).listOf()
 	);
 
-	public static final LootFunctionType<RandomFireworksLootFunction> RANDOM_FIREWORKS = registerLootFunction(
+	public static final LootItemFunctionType<RandomFireworksLootFunction> RANDOM_FIREWORKS = registerLootFunction(
 			id("random_fireworks"), RandomFireworksLootFunction.CODEC
 	);
 
-	public static final TagKey<EntityType<?>> WEIGHTLESS_PROJECTILES = TagKey.of(RegistryKeys.ENTITY_TYPE, id("weightless_projectiles"));
+	public static final TagKey<EntityType<?>> WEIGHTLESS_PROJECTILES = TagKey.create(Registries.ENTITY_TYPE, id("weightless_projectiles"));
 
 	public static void onFireworkShot(
-			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, Consumer<Item> onBreak
+			ServerLevel world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity, Consumer<Item> onBreak
 	) {
 		modifyFireworkDuration(world, weaponStack, fireworkRocketEntity);
 	}
 
 	public static void onProjectileFired(
-			ServerWorld world, ItemStack weaponStack, ProjectileEntity projectileEntity, Consumer<Item> onBreak
+			ServerLevel world, ItemStack weaponStack, Projectile projectileEntity, Consumer<Item> onBreak
 	) {
 		LivingEntity livingEntity2 = projectileEntity.getOwner() instanceof LivingEntity livingEntity ? livingEntity : null;
-		EnchantmentEffectContext enchantmentEffectContext = new EnchantmentEffectContext(weaponStack, null, livingEntity2, onBreak);
+		EnchantedItemInUse enchantmentEffectContext = new EnchantedItemInUse(weaponStack, null, livingEntity2, onBreak);
 
-		EnchantmentHelper.forEachEnchantment(weaponStack, (entry, level) -> {
+		EnchantmentHelper.runIterationOnItem(weaponStack, (entry, level) -> {
             Enchantment.applyEffects(
-					entry.value().getEffect(PROJECTILE_FIRED),
-					Enchantment.createEnchantedEntityLootContext(world, level, projectileEntity, projectileEntity.getEntityPos()),
-					effect -> effect.apply(world, level, enchantmentEffectContext, projectileEntity, projectileEntity.getEntityPos())
+					entry.value().getEffects(PROJECTILE_FIRED),
+					Enchantment.entityContext(world, level, projectileEntity, projectileEntity.position()),
+					effect -> effect.apply(world, level, enchantmentEffectContext, projectileEntity, projectileEntity.position())
 			);
 		});
 	}
 
 	private static float modifyValue(
-			ComponentType<List<EnchantmentEffectEntry<EnchantmentValueEffect>>> enchantment, ServerWorld world, ItemStack stack, Entity user, float baseValue
+			DataComponentType<List<ConditionalEffect<EnchantmentValueEffect>>> enchantment, ServerLevel world, ItemStack stack, Entity user, float baseValue
 	) {
-        var enchantments = stack.getOrDefault(DataComponentTypes.ENCHANTMENTS, ItemEnchantmentsComponent.DEFAULT);
+        var enchantments = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 		if (enchantments.isEmpty()) return baseValue;
 		var workingDuration = new MutableFloat(baseValue);
 
-		for (Object2IntMap.Entry<RegistryEntry<Enchantment>> entry : enchantments.getEnchantmentEntries()) {
-			entry.getKey().value().modifyValue(enchantment, world, entry.getIntValue(), stack, user, workingDuration);
+		for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
+			entry.getKey().value().modifyEntityFilteredValue(enchantment, world, entry.getIntValue(), stack, user, workingDuration);
 		}
 
 		return workingDuration.floatValue();
 	}
 
 	private static void modifyFireworkDuration(
-			ServerWorld world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity
+			ServerLevel world, ItemStack weaponStack, FireworkRocketEntity fireworkRocketEntity
 	) {
 		var access = (FireworkRocketEntityAccessor) fireworkRocketEntity;
-		access.setLifeTime((int) modifyValue(ROCKET_DURATION, world, weaponStack, fireworkRocketEntity, access.getLifeTime()));
+		access.setLifetime((int) modifyValue(ROCKET_DURATION, world, weaponStack, fireworkRocketEntity, access.getLifetime()));
 	}
 
-	public static float modifyVelocity(ServerWorld world, ItemStack stack, ProjectileEntity projectileEntity, float baseVelocity) {
+	public static float modifyVelocity(ServerLevel world, ItemStack stack, Projectile projectileEntity, float baseVelocity) {
 		return modifyValue(PROJECTILE_VELOCITY, world, stack, projectileEntity, baseVelocity);
 	}
 
-	public static Predicate<ItemStack> getAllowedPrimaryProjectiles(ServerWorld world, ItemStack stack, Entity user, Predicate<ItemStack> original) {
-		var predicates = new ArrayList<com.google.common.base.Predicate<RegistryEntry<Item>>>();
+	public static Predicate<ItemStack> getAllowedPrimaryProjectiles(ServerLevel world, ItemStack stack, Entity user, Predicate<ItemStack> original) {
+		var predicates = new ArrayList<com.google.common.base.Predicate<Holder<Item>>>();
 
-		EnchantmentHelper.forEachEnchantment(stack, (entry, level) -> {
+		EnchantmentHelper.runIterationOnItem(stack, (entry, level) -> {
 			Enchantment.applyEffects(
-					entry.value().getEffect(ALLOW_LOADING_PRIMARY),
-					Enchantment.createEnchantedEntityLootContext(world, level, user, user.getEntityPos()),
+					entry.value().getEffects(ALLOW_LOADING_PRIMARY),
+					Enchantment.entityContext(world, level, user, user.position()),
 					effect -> predicates.add(effect::contains)
 			);
 		});
@@ -174,18 +177,18 @@ public class RocketRiding implements ModInitializer {
 		if (predicates.isEmpty()) return original;
 
 		var predicate = Predicates.or(predicates);
-		return original.or(stack2 -> predicate.test(stack2.getRegistryEntry()));
+		return original.or(stack2 -> predicate.test(stack2.getItemHolder()));
 	}
 
 	@SuppressWarnings("DataFlowIssue")
-    public static @Nullable ItemStack getDefaultProjectile(ServerWorld world, ItemStack stack, Entity user) {
+    public static @Nullable ItemStack getDefaultProjectile(ServerLevel world, ItemStack stack, Entity user) {
 		AtomicReference<@Nullable ItemStack> projectile = new AtomicReference<>();
 
-		EnchantmentHelper.forEachEnchantment(stack, (entry, level) -> {
+		EnchantmentHelper.runIterationOnItem(stack, (entry, level) -> {
 			if (projectile.get() != null) return;
 			Enchantment.applyEffects(
-					entry.value().getEffect(DEFAULT_PROJECTILE),
-					Enchantment.createEnchantedEntityLootContext(world, level, user, user.getEntityPos()),
+					entry.value().getEffects(DEFAULT_PROJECTILE),
+					Enchantment.entityContext(world, level, user, user.position()),
 					effect -> projectile.set(getLoot(effect.lootTable(), effect.seed(), world, user, stack))
 			);
 		});
@@ -193,19 +196,19 @@ public class RocketRiding implements ModInitializer {
 		return projectile.get();
 	}
 
-	private static ItemStack getLoot(RegistryKey<LootTable> lootTableKey, long seed, ServerWorld serverWorld, Entity entity, ItemStack tool) {
-		var lootTable = serverWorld.getServer().getReloadableRegistries().getLootTable(lootTableKey);
-		var parameters = new LootWorldContext.Builder(serverWorld)
-				.add(LootContextParameters.THIS_ENTITY, entity)
-				.add(LootContextParameters.ORIGIN, entity.getEntityPos())
-				.add(LootContextParameters.TOOL, tool)
-				.build(LootContextTypes.FISHING);
-		var loot = lootTable.generateLoot(parameters, seed);
+	private static ItemStack getLoot(ResourceKey<LootTable> lootTableKey, long seed, ServerLevel serverWorld, Entity entity, ItemStack tool) {
+		var lootTable = serverWorld.getServer().reloadableRegistries().getLootTable(lootTableKey);
+		var parameters = new LootParams.Builder(serverWorld)
+				.withParameter(LootContextParams.THIS_ENTITY, entity)
+				.withParameter(LootContextParams.ORIGIN, entity.position())
+				.withParameter(LootContextParams.TOOL, tool)
+				.create(LootContextParamSets.FISHING);
+		var loot = lootTable.getRandomItems(parameters, seed);
 		return switch (loot.size()) {
 			case 0 -> ItemStack.EMPTY;
 			case 1 -> loot.getFirst();
 			default -> {
-				LOGGER.error("Expected one loot item from loot table {}", lootTableKey.getValue());
+				LOGGER.error("Expected one loot item from loot table {}", lootTableKey.identifier());
 				yield loot.getFirst();
 			}
 		};
@@ -226,15 +229,15 @@ public class RocketRiding implements ModInitializer {
 
 		LootTableEvents.MODIFY.register((registryKey, builder, source, wrapperLookup) -> {
             if (!source.isBuiltin()) return;
-            if (registryKey == LootTables.END_CITY_TREASURE_CHEST)
-				builder.pool(LootPool.builder()
-						.with(LootTableEntry.builder(END_CITY_INJECT))
+            if (registryKey == BuiltInLootTables.END_CITY_TREASURE)
+				builder.pool(LootPool.lootPool()
+						.add(NestedLootTable.lootTableReference(END_CITY_INJECT))
 						.build());
-			if (registryKey == LootTables.TRIAL_CHAMBERS_REWARD_RARE_CHEST || registryKey == LootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE_CHEST)
+			if (registryKey == BuiltInLootTables.TRIAL_CHAMBERS_REWARD_RARE || registryKey == BuiltInLootTables.TRIAL_CHAMBERS_REWARD_OMINOUS_RARE)
 				builder.modifyPools(poolBuilder ->
-					poolBuilder.with(
-							LootTableEntry.builder(TRIAL_CHAMBER_INJECT)
-									.weight(2)
+					poolBuilder.add(
+							NestedLootTable.lootTableReference(TRIAL_CHAMBER_INJECT)
+									.setWeight(2)
 					)
 				);
         });

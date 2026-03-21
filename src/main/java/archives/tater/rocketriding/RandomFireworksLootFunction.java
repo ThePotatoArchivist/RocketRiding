@@ -5,18 +5,6 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FireworkExplosionComponent;
-import net.minecraft.component.type.FireworksComponent;
-import net.minecraft.item.ItemStack;
-import net.minecraft.loot.condition.LootCondition;
-import net.minecraft.loot.context.LootContext;
-import net.minecraft.loot.function.ConditionalLootFunction;
-import net.minecraft.loot.function.LootFunctionType;
-import net.minecraft.util.DyeColor;
-import net.minecraft.util.math.intprovider.ConstantIntProvider;
-import net.minecraft.util.math.intprovider.IntProvider;
-import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -24,9 +12,21 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.RandomSource;
+import net.minecraft.util.valueproviders.ConstantInt;
+import net.minecraft.util.valueproviders.IntProvider;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.component.Fireworks;
+import net.minecraft.world.level.storage.loot.LootContext;
+import net.minecraft.world.level.storage.loot.functions.LootItemConditionalFunction;
+import net.minecraft.world.level.storage.loot.functions.LootItemFunctionType;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
-public class RandomFireworksLootFunction extends ConditionalLootFunction {
-    public final List<FireworkExplosionComponent.Type> shapes;
+public class RandomFireworksLootFunction extends LootItemConditionalFunction {
+    public final List<FireworkExplosion.Shape> shapes;
     public final Optional<IntProvider> duration;
     public final IntProvider explosions;
     public final IntProvider colors;
@@ -34,12 +34,12 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
     public final float trailChance;
     public final float twinkleChance;
 
-    public static final List<FireworkExplosionComponent.Type> ALL_TYPES = List.of(FireworkExplosionComponent.Type.values());
+    public static final List<FireworkExplosion.Shape> ALL_TYPES = List.of(FireworkExplosion.Shape.values());
     public static final List<Integer> ALL_COLORS = Arrays.stream(DyeColor.values()).map(DyeColor::getFireworkColor).toList();
 
     protected RandomFireworksLootFunction(
-            List<LootCondition> conditions,
-            List<FireworkExplosionComponent.Type> shapes,
+            List<LootItemCondition> conditions,
+            List<FireworkExplosion.Shape> shapes,
             Optional<IntProvider> duration,
             IntProvider explosions,
             IntProvider colors,
@@ -57,53 +57,53 @@ public class RandomFireworksLootFunction extends ConditionalLootFunction {
         this.twinkleChance = twinkleChance;
     }
 
-    public static final MapCodec<RandomFireworksLootFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> addConditionsField(instance).and(instance.group(
-            FireworkExplosionComponent.Type.CODEC.listOf().optionalFieldOf("shapes", ALL_TYPES).forGetter((RandomFireworksLootFunction it) -> it.shapes),
+    public static final MapCodec<RandomFireworksLootFunction> CODEC = RecordCodecBuilder.mapCodec(instance -> commonFields(instance).and(instance.group(
+            FireworkExplosion.Shape.CODEC.listOf().optionalFieldOf("shapes", ALL_TYPES).forGetter((RandomFireworksLootFunction it) -> it.shapes),
             IntProvider.POSITIVE_CODEC.optionalFieldOf("duration").forGetter((RandomFireworksLootFunction it) -> it.duration),
-            IntProvider.POSITIVE_CODEC.optionalFieldOf("explosions", ConstantIntProvider.create(1)).forGetter((RandomFireworksLootFunction it) -> it.explosions),
-            IntProvider.POSITIVE_CODEC.optionalFieldOf("colors", ConstantIntProvider.create(1)).forGetter((RandomFireworksLootFunction it) -> it.colors),
-            IntProvider.POSITIVE_CODEC.optionalFieldOf("fade_colors", ConstantIntProvider.create(0)).forGetter((RandomFireworksLootFunction it) -> it.fadeColors),
+            IntProvider.POSITIVE_CODEC.optionalFieldOf("explosions", ConstantInt.of(1)).forGetter((RandomFireworksLootFunction it) -> it.explosions),
+            IntProvider.POSITIVE_CODEC.optionalFieldOf("colors", ConstantInt.of(1)).forGetter((RandomFireworksLootFunction it) -> it.colors),
+            IntProvider.POSITIVE_CODEC.optionalFieldOf("fade_colors", ConstantInt.of(0)).forGetter((RandomFireworksLootFunction it) -> it.fadeColors),
             Codec.FLOAT.optionalFieldOf("trail_chance", 0f).forGetter((RandomFireworksLootFunction it) -> it.trailChance),
             Codec.FLOAT.optionalFieldOf("twinkle_chance", 0f).forGetter((RandomFireworksLootFunction it) -> it.twinkleChance)
     )).apply(instance, RandomFireworksLootFunction::new));
 
     @Override
-    protected ItemStack process(ItemStack stack, LootContext context) {
-        stack.set(DataComponentTypes.FIREWORKS, generateFirework(stack.get(DataComponentTypes.FIREWORKS), context.getRandom()));
+    protected ItemStack run(ItemStack stack, LootContext context) {
+        stack.set(DataComponents.FIREWORKS, generateFirework(stack.get(DataComponents.FIREWORKS), context.getRandom()));
         return stack;
     }
 
-    private static <T> T pick(List<T> items, Random random) {
+    private static <T> T pick(List<T> items, RandomSource random) {
         return items.get(random.nextInt(items.size()));
     }
 
-    private IntList generateColors(int count, Random random) {
+    private IntList generateColors(int count, RandomSource random) {
         return IntArrayList.toListWithExpectedSize(IntStream.range(0, count).map(x -> pick(ALL_COLORS, random)), count);
     }
 
-    private FireworkExplosionComponent generateExplosion(Random random) {
-        return new FireworkExplosionComponent(
+    private FireworkExplosion generateExplosion(RandomSource random) {
+        return new FireworkExplosion(
                 pick(shapes, random),
-                generateColors(colors.get(random), random),
-                generateColors(fadeColors.get(random), random),
+                generateColors(colors.sample(random), random),
+                generateColors(fadeColors.sample(random), random),
                 random.nextFloat() <= trailChance,
                 random.nextFloat() <= twinkleChance
         );
     }
 
-    private FireworksComponent generateFirework(@Nullable FireworksComponent current, Random random) {
-        var explosionCount = explosions.get(random);
-        var explosionList = new ArrayList<FireworkExplosionComponent>();
+    private Fireworks generateFirework(@Nullable Fireworks current, RandomSource random) {
+        var explosionCount = explosions.sample(random);
+        var explosionList = new ArrayList<FireworkExplosion>();
         for (var i = 0; i < explosionCount; i++)
             explosionList.add(generateExplosion(random));
-        return new FireworksComponent(
-                duration.map(provider -> provider.get(random)).orElse(current == null ? 1 : current.flightDuration()),
+        return new Fireworks(
+                duration.map(provider -> provider.sample(random)).orElse(current == null ? 1 : current.flightDuration()),
                 explosionList
         );
     }
 
     @Override
-    public LootFunctionType<? extends ConditionalLootFunction> getType() {
+    public LootItemFunctionType<? extends LootItemConditionalFunction> getType() {
         return RocketRiding.RANDOM_FIREWORKS;
     }
 }

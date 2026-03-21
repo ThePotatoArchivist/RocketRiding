@@ -2,12 +2,6 @@ package archives.tater.rocketriding.mixin;
 
 import archives.tater.rocketriding.RocketRiding;
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.RangedWeaponItem;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Hand;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -17,27 +11,33 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ProjectileWeaponItem;
 
-@Mixin(RangedWeaponItem.class)
+@Mixin(ProjectileWeaponItem.class)
 public class RangedWeaponItemMixin {
     @Unique
     private @Nullable ItemStack weaponStack = null;
 
     @Inject(
-            method = "shootAll",
+            method = "shoot",
             at = @At("HEAD")
     )
-    private void saveWeaponStack(ServerWorld world, LivingEntity shooter, Hand hand, ItemStack stack, List<ItemStack> projectiles, float speed, float divergence, boolean critical, @Nullable LivingEntity target, CallbackInfo ci) {
+    private void saveWeaponStack(ServerLevel world, LivingEntity shooter, InteractionHand hand, ItemStack stack, List<ItemStack> projectiles, float speed, float divergence, boolean critical, @Nullable LivingEntity target, CallbackInfo ci) {
         weaponStack = stack;
     }
 
     @ModifyArg(
             method = "method_61659",
-            at = @At(value = "INVOKE", target = "Lnet/minecraft/item/RangedWeaponItem;shoot(Lnet/minecraft/entity/LivingEntity;Lnet/minecraft/entity/projectile/ProjectileEntity;IFFFLnet/minecraft/entity/LivingEntity;)V"),
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ProjectileWeaponItem;shootProjectile(Lnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/projectile/Projectile;IFFFLnet/minecraft/world/entity/LivingEntity;)V"),
             index = 3
     )
-    private float projectileVelocityEnchantment(float speed, @Local(argsOnly = true) ProjectileEntity projectileEntity) {
-        if (weaponStack == null || !(projectileEntity.getEntityWorld() instanceof ServerWorld world)) return speed;
+    private float projectileVelocityEnchantment(float speed, @Local(argsOnly = true) Projectile projectileEntity) {
+        if (weaponStack == null || !(projectileEntity.level() instanceof ServerLevel world)) return speed;
         return RocketRiding.modifyVelocity(world, weaponStack, projectileEntity, speed);
     }
 
@@ -45,14 +45,14 @@ public class RangedWeaponItemMixin {
             method = "method_61659",
             at = @At("TAIL")
     )
-    private void runEnchantmentEffect(LivingEntity livingEntity, int i, float f, float g, float h, LivingEntity livingEntity2, ProjectileEntity projectile, CallbackInfo ci) {
+    private void runEnchantmentEffect(LivingEntity livingEntity, int i, float f, float g, float h, LivingEntity livingEntity2, Projectile projectile, CallbackInfo ci) {
         var stack = weaponStack;
         weaponStack = null;
         if (stack == null || stack.isEmpty()) {
             RocketRiding.LOGGER.error("Invalid weapon firing an arrow");
             return;
         }
-        if (!(projectile.getEntityWorld() instanceof ServerWorld world)) return;
+        if (!(projectile.level() instanceof ServerLevel world)) return;
 
         RocketRiding.onProjectileFired(world, stack, projectile, item -> {});
     }

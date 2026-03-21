@@ -1,12 +1,12 @@
 package archives.tater.rocketriding;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.Ownable;
-import net.minecraft.predicate.entity.EntityPredicate;
-import net.minecraft.predicate.entity.EntitySubPredicate;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.advancements.criterion.EntityPredicate;
+import net.minecraft.advancements.criterion.EntitySubPredicate;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.TraceableEntity;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 public record OwnerPredicate(
@@ -15,13 +15,13 @@ public record OwnerPredicate(
     public static final MapCodec<OwnerPredicate> CODEC = EntityPredicate.CODEC.xmap(OwnerPredicate::new, OwnerPredicate::predicate).fieldOf("predicate");
 
     @Override
-    public MapCodec<? extends OwnerPredicate> getCodec() {
+    public MapCodec<? extends OwnerPredicate> codec() {
         return CODEC;
     }
 
     @Override
-    public boolean test(Entity entity, ServerWorld world, @Nullable Vec3d pos) {
-        if (!(entity instanceof Ownable ownable)) return false;
-        return predicate.test(world, pos, ownable.getOwner());
+    public boolean matches(Entity entity, ServerLevel world, @Nullable Vec3 pos) {
+        if (!(entity instanceof TraceableEntity ownable)) return false;
+        return predicate.matches(world, pos, ownable.getOwner());
     }
 }
